@@ -1,8 +1,11 @@
+require ('dotenv').config();
 import { Request,Response, NextFunction } from "express";
 import userModel from "../models/user.model";
 import ErrorHandler from "../utils/ErrorHandler";
 import { CatchAsyncError } from "../middleware/catchAsyncError";
-
+import jwt, { Secret } from "jsonwebtoken";
+import ejs from "ejs";
+import path from "path";
 
 // Register User
 interface IRegistrationBody{
@@ -24,8 +27,30 @@ export const registrationUser = CatchAsyncError(async(req:Request,res:Response,n
             name,
             email,
             password,
-        }
+        };
+
+        const activationToken = createActivationToken(user);
+
+        const activationCode =activationToken.activationCode;
+
+        const data = {user: {name:user.name}, activationCode}
+        const html = await ejs.renderFile(path.join(__dirname,"../mails/activation-mail.ejs"), data);
     } catch (error:any) {
         return next(new ErrorHandler(error.message,400))
     }
 });
+interface IActivationToken{
+    token: string;
+    activationCode: string;
+}
+
+export const createActivationToken = (user:any):IActivationToken =>{
+ const activationCode = Math.floor(1000 + Math.random() * 9000).toString();
+ const token = jwt.sign({
+    user,activationCode
+ },process.env.ACTIVATION_SECTET as Secret,{
+    expiresIn: '5m',
+ });
+
+ return{token,activationCode}
+}
