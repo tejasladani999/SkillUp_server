@@ -16,9 +16,10 @@ export const sendToken = (user: IUser, statusCode: number, res: Response) => {
   const refreshToken = user.SignRefreshToken();
 
   // upload session to redis
-    redis.set("user._id", JSON.stringify(user) as any);
+  redis.set(user.id, JSON.stringify(user) as any);
+  console.log(user.id);
 
-    // parse environment variable to integrates with fallback values
+  // parse environment variable to integrates with fallback values
   const accessTokenExpire = parseInt(
     process.env.ACCESS_TOKEN_EXPIRE || "300",
     10
@@ -33,19 +34,19 @@ export const sendToken = (user: IUser, statusCode: number, res: Response) => {
     expires: new Date(Date.now() + accessTokenExpire * 1000),
     maxAge: accessTokenExpire * 1000,
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: "lax",
   };
 
   const refreshTokenOptions: ITokenOptions = {
     expires: new Date(Date.now() + refreshTokenExpire * 1000),
     maxAge: refreshTokenExpire * 1000,
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: "lax",
   };
 
   //only set secure to true in production
 
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === "production") {
     accessTokenOptions.secure = true;
   }
 
