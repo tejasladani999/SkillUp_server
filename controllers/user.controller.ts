@@ -8,7 +8,7 @@ import ejs from "ejs";
 import path from "path";
 import sendMail from "../utils/sendMail";
 import { sendToken } from "../utils/jwt";
-
+import { redis } from "../utils/redis";
 // Register User
 interface IRegistrationBody {
   name: string;
@@ -104,7 +104,6 @@ export const activateUser = CatchAsyncError(
       ) as { user: IUser; activationCode: string };
 
       if (newUser.activationCode !== activation_code) {
-        console.log(newUser.activationCode, activation_code);
         return next(new ErrorHandler("Invalid activation code", 400));
       }
 
@@ -170,6 +169,9 @@ export const logoutUser = CatchAsyncError(
     try {
       res.cookie("access_token", "", { maxAge: 1 });
       res.cookie("refresh_token", "", { maxAge: 1 });
+      const userId = req.user?._id || '';
+      redis.del(userId);
+
       res.status(200).json({
         success: true,
         message: "User logout successfully",
